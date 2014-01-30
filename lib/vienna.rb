@@ -60,6 +60,9 @@ module Vienna
   #
   
   class Application
+    # regexp to match strings without periods that start and end with a slash
+    MATCH = %r{^/([^.]*)[^/]$}
+
     def initialize(root = 'public')
       @app = Rack::Builder.new do
         use Rack::Static,
@@ -73,7 +76,12 @@ module Vienna
     end
     
     def call(env)
-      @app.call(env)
+      if env['PATH_INFO'] != '/' && env['PATH_INFO'] =~ MATCH
+        env['PATH_INFO'] += '/'
+        [301, {"Location" => Rack::Request.new(env).url, "Content-Type" => ""}, []]
+      else
+        @app.call(env)
+      end
     end
   end
 end
